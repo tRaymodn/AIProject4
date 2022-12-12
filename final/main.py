@@ -5,7 +5,7 @@ import numpy as np
 
 date_format = "%Y-%m-%d"
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.neural_network import MLPClassifier
 from scipy.stats import pearsonr
 
@@ -99,7 +99,23 @@ def main():
     print("Best estimator for tolerance: ", grid.best_estimator_.tol)
     print("Best estimator for alpha: ", grid.best_estimator_.alpha)
 
+    bestEstimate = MLPClassifier(solver='lbfgs', random_state=grid.best_estimator_.random_state,
+                                 tol=grid.best_estimator_.tol,
+                                 alpha=grid.best_estimator_.alpha,
+                                 hidden_layer_sizes=(6, 3),
+                                 max_iter=2000)
+    scores = cross_val_score(bestEstimate, split[0], labels, cv=5)
+    print("5-fold cross validation scores on training data: ", scores)
+    f1 = sum(scores) / len(scores)
+    print("Average cross validation score on training data: ", f1)
 
+
+    pass_att = []
+    for row in split[0]:
+        pass_att.append(row[1])
+    corr = pearsonr(pass_att, labels)  # Measures the correlation between pass attempts and predicting labels
+    print("Pearson correlation statistic: ", corr.statistic)
+    print("Correlation P-value: ", corr.pvalue)
 
 
 
