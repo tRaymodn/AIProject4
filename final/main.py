@@ -2,6 +2,7 @@ import csv
 import datetime
 
 import numpy as np
+from tabulate import tabulate
 
 date_format = "%Y-%m-%d"
 
@@ -60,8 +61,6 @@ def main():
         return teams
 
     # Start of main functionality
-    """dallasData = getTeamData("DAL", "2021-11-07")
-    print(dallasData)"""
 
     # Populate dataset with values to be input into neural network
     games = getAllGames()
@@ -79,7 +78,7 @@ def main():
     print("Length of training data : ", len(split[0]))
     labels = []
     for row in split[0]:
-        if row[50] > row[51]:
+        if row[24] > row[25]:
             labels.append(0)
         else:
             labels.append(1)
@@ -109,13 +108,26 @@ def main():
     f1 = sum(scores) / len(scores)
     print("Average cross validation score on training data: ", f1)
 
+    #  Record the names of all of the statistics' correlations to be calculated
+    stat_names = []
+    for i in range(len(data[0])):
+        if 5 <= i <= 28 or 57 <= i <= 58:
+            stat_names.append(data[0][i])
+    #  print(stat_names)
 
-    pass_att = []
-    for row in split[0]:
-        pass_att.append(row[1])
-    corr = pearsonr(pass_att, labels)  # Measures the correlation between pass attempts and predicting labels
-    print("Pearson correlation statistic: ", corr.statistic)
-    print("Correlation P-value: ", corr.pvalue)
+    #  Creates a table of tuples - ['statName', 'pearsonCorrelation', 'pValue']
+    correlation_table = []
+    for i in range(0, 26):
+        correlation_row = []
+        for row in split[0]:
+            correlation_row.append(row[i])
+        corr = pearsonr(correlation_row, labels)  # Measures the correlation between each param and labels
+        table_input = [stat_names[i], corr.statistic, corr.pvalue]
+        correlation_table.append(table_input)
+
+    #  Print all the parameters and their corresponding pvals and correlation statistics
+    print(tabulate(correlation_table, headers=["Statistic", "Correlation", "P_val"]))
+
 
 
 
