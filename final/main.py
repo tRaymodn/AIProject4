@@ -64,6 +64,8 @@ def main():
     for game in gamesplit:
         t1 = getTeamData(game[1], game[0])
         t2 = getTeamData(game[2], game[0])
+        t2.pop()
+        t2.pop()
         combined = t1
         for param in t2:
             combined.append(param)
@@ -108,13 +110,13 @@ def main():
     #  Record the names of all of the statistics' correlations to be calculated
     stat_names = []
     for i in range(len(data[0])):
-        if 5 <= i <= 28 or 57 <= i <= 58:
+        if 5 <= i <= 28 or 30 < i <= 54 or 57 <= i <= 58:
             stat_names.append(data[0][i])
     #  print(stat_names)
 
     #  Creates a table of tuples - ['statName', 'pearsonCorrelation', 'pValue']
     correlation_table = []
-    for i in range(0, 26):
+    for i in range(0, 50):
         correlation_row = []
         for row in split[0]:
             correlation_row.append(row[i])
