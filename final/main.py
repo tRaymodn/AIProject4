@@ -12,7 +12,7 @@ from scipy.stats import pearsonr
 
 # Read in data from csv
 data = []
-with open("nfl_pass_rush_receive_raw_data.csv") as file:
+with open("fullDataset.csv") as file:
     reader = csv.reader(file)
     for row in reader:
         data.append(row)
@@ -33,10 +33,12 @@ def getAllGames():
 # Accepts a three-letter abbreviation of a team and a string date of the form YYYY-mm-dd
 # Returns cumulative statistics(hyperparameters) from all games the given team has played up until the given date
 def getTeamData(team, date):
+    current_date = datetime.datetime.strptime(date, date_format)
     teamData = []
-    for row in data:
-        if row[4] == team and datetime.datetime.strptime(row[68], date_format) < datetime.datetime.strptime(date,
-                                                                                                            date_format):
+    for row in data[1:]:
+        game_date = datetime.datetime.strptime(row[68], date_format)
+        cutoff_date = datetime.datetime(game_date.year - 1, game_date.month, game_date.day)
+        if row[4] == team and current_date > game_date > cutoff_date:
             if len(teamData) < 1:
                 for i in range(len(row)):
                     if 5 <= i <= 28 or 30 < i <= 54 or 57 <= i <= 58:
@@ -55,6 +57,8 @@ def getTeams():
     for row in data:
         if row[4] not in teams and row[4] != 'team':
             teams.append(row[4])
+        if len(teams) > 31:
+            break
     return teams
 def main():
     # Populate dataset with values to be input into neural network
