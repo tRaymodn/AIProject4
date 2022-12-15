@@ -15,59 +15,42 @@ def normalize_data(data):
     
 
 def make_model():
-    # Populate dataset with values to be input into neural network
+    # Populate dataset with sequences of teams' game stat sums to be input into neural network
     games = getAllGames()
     teams_seen = []
     game_sequences = []
+    sequence_labels = []
     for game in games:
-        if game[1] not in teams_seen:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
+        if game[1] not in teams_seen and len(game[1]) == 3:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
             teams_seen.append(game[1])
             game_sequences.append(getTeamData(game[1], game[0]))
-        elif len(game_sequences[teams_seen.index(game[1])]) < 11:  # Only save record of sequences of ten games
+            sequence_labels.append(game[3])
+        elif len(game[1]) == 3 and len(game_sequences[teams_seen.index(game[1])]) < 11:  # Only save record of sequences of ten games
             game_sequences[teams_seen.index(game[1])].append(getTeamData(game[1], game[0]))
-
-        if game[2] not in teams_seen:
+        if game[2] not in teams_seen and len(game[2]) == 3:
             teams_seen.append(game[2])
             game_sequences.append(getTeamData(game[2], game[0]))
-        elif len(game_sequences[teams_seen.index(game[1])]) < 11:
+            sequence_labels.append(game[3])
+        elif len(game[2]) == 3 and len(game_sequences[teams_seen.index(game[2])]) < 11:
             game_sequences[teams_seen.index(game[2])].append(getTeamData(game[2], game[0]))
+    print("Length of game_sequences: ", len(game_sequences))
 
-    """sequence_labels = []
-    for seq in game_sequences:
-        seq.pop(0)
-        game_labels = []
-        for game in seq:
-            if len(game_labels) < 11:
-                if game[48] > game[49]:
-                    game_labels.append(0)
-                else:
-                    game_labels.append(1)
-        if len(sequence_labels) < 1:
-            sequence_labels.append(game_labels)
-        elif len(sequence_labels) == 1:
-            sequence_labels = np.stack((sequence_labels[0], game_labels))
-        else:
-            print(np.shape([game_labels]))
-            if np.shape([game_labels]) == (1, 11):
-                game_labels.pop(10)
-            sequence_labels = np.concatenate((sequence_labels, [game_labels]))"""
-
-    labs = []
-    for seq in game_sequences:
-        if seq[len(seq) - 1][48] > seq[len(seq) - 1][49]:
-            labs.append(0)
-        else:
-            labs.append(1)
     arr = []
     for seq in game_sequences:
         if len(arr) < 1:
+            seq.pop(0)
             arr.append(seq)
+            print("first 12 length seq is: ", seq)
         elif len(arr) == 1:
+            seq.pop(0)
+            print("Shape or arr[0]: ", np.shape(arr[0]), "\nseq shape: ", np.shape(seq))
+            print("seq :", seq)
             arr = np.stack((arr[0], seq))
         else:
-            if np.shape([seq]) == (1, 12, 50):
+            """if np.shape([seq]) == (1, 12, 50):
                 print("You are stupid: ", [seq])
-                seq.pop(11)
+                seq.pop(11)"""
+            seq.pop(0)
             arr = np.concatenate((arr, [seq]))
 
         print(np.shape(seq))
@@ -85,8 +68,8 @@ def make_model():
 
     model.compile(optimizer=opt, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy'])
 
-    print(np.shape(labs))
+    print(np.shape(sequence_labels))
     print(np.shape(arr))
-    model.fit(arr, np.asarray(labs, dtype='float'), epochs=200)
+    model.fit(arr, np.asarray(sequence_labels, dtype='float'), epochs=200)
 
 make_model()

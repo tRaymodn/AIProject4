@@ -21,10 +21,14 @@ with open("fullDataset.csv") as file:
 def getAllGames():
     games = []
     for row in data[1:]:
-        gameInstance = [row[68], row[29], row[30]]
+        if row[48] > row[49]:
+            label = 0
+        else:
+            label = 1
+        gameInstance = [row[68], row[29], row[30], label]
         flag = 0
         for game in games:
-            if gameInstance == game or game == [row[68], row[30], row[29]]:  # Catch repeat games with different home and away teams
+            if gameInstance == game or game == [row[68], row[30], row[29], label]:  # Catch repeat games with different home and away teams
                 flag = 1
         if flag == 0:
             games.append(gameInstance)
@@ -33,7 +37,7 @@ def getAllGames():
 # Accepts a three-letter abbreviation of a team and a string date of the form YYYY-mm-dd
 # Returns cumulative statistics(hyperparameters) from all games the given team has played up until the given date
 def getTeamData(team, date):
-    current_date = datetime.datetime.strptime(date, date_format)
+    current_date = datetime.datetime.strptime(date, date_format)  # datetime object for the date input to function
     teamData = []
     for row in data[1:]:
         game_date = datetime.datetime.strptime(row[68], date_format)
