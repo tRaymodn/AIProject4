@@ -3,12 +3,14 @@ import datetime
 
 import numpy as np
 from tabulate import tabulate
+import tensorflow as tf
 
 date_format = "%Y-%m-%d"
 
 from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.neural_network import MLPClassifier
 from scipy.stats import pearsonr
+from sklearn.metrics import f1_score
 
 # Read in data from csv
 data = []
@@ -41,7 +43,10 @@ def getTeamData(team, date):
     teamData = []
     for row in data[1:]:
         game_date = datetime.datetime.strptime(row[68], date_format)
-        cutoff_date = datetime.datetime(game_date.year - 1, game_date.month, game_date.day)
+        if game_date.month - 4 < 1:
+            cutoff_date = datetime.datetime(game_date.year - 1, 12 + (game_date.month - 4), 1)
+        else:
+            cutoff_date = datetime.datetime(game_date.year, game_date.month - 4, 1)
         if row[4] == team and current_date > game_date > cutoff_date:
             if len(teamData) < 1:
                 for i in range(len(row)):
@@ -72,8 +77,11 @@ def main():
     for game in gamesplit:
         t1 = getTeamData(game[1], game[0])
         t2 = getTeamData(game[2], game[0])
-        t2.pop()
-        t2.pop()
+        if len(t2) < 1:
+            t2 = np.zeros((50, 1))
+        else:
+            t2.pop()
+            t2.pop()
         combined = t1
         for param in t2:
             combined.append(param)
@@ -81,23 +89,28 @@ def main():
 
     split = train_test_split(dataset, test_size=0.3, random_state=42, shuffle=True)  # split[1]=testing, split[0]=training
     print("Length of training data : ", len(split[0]))
+    train_arr = []
     labels = []
     for row in split[0]:
-        if row[48] > row[49]:
-            labels.append(0)
-        else:
-            labels.append(1)
+        if len(row) == 98:
+            if row[48] > row[49]:
+                labels.append(0)
+            else:
+                labels.append(1)
+            train_arr.append(np.array(row))
+
 
     print("Length of testing data : ", len(split[1]))
+    print("Size of training data: ", len(train_arr))
     clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(6, 3), random_state=1, max_iter=2500)
-    clf.fit(split[0], labels)
+    clf.fit(train_arr, labels)
 
     #  Hyperparameters to be tuned in GridSearchCV
     randomState = np.array([1, 5, 10])
     tol = np.array([0.0001, 0.00001, 0.01])
     alpha = np.array([0.0001, 0.001, 0.01, 0.1, 1])
     grid = GridSearchCV(estimator=clf, param_grid={'tol': tol, 'alpha': alpha, 'random_state': randomState})
-    grid.fit(split[0], labels)
+    grid.fit(train_arr, labels)
     # summarize the results of the grid search
     print("Best grid score: ", grid.best_score_)
     print("Best estimator for random state: ", grid.best_estimator_.random_state)
@@ -110,7 +123,7 @@ def main():
                                  alpha=grid.best_estimator_.alpha,
                                  hidden_layer_sizes=(6, 3),
                                  max_iter=2000)
-    scores = cross_val_score(bestEstimate, split[0], labels, cv=5)
+    scores = cross_val_score(bestEstimate, train_arr, labels, cv=5)
     print("5-fold cross validation scores on training data: ", scores)
     f1 = sum(scores) / len(scores)
     print("Average cross validation score on training data: ", f1)
@@ -126,13 +139,30 @@ def main():
     correlation_table = []
     for i in range(0, 50):
         correlation_row = []
-        for row in split[0]:
+        for row in train_arr:
             correlation_row.append(row[i])
         corr = pearsonr(correlation_row, labels)  # Measures the correlation between each param and labels
         table_input = [stat_names[i], corr.statistic, corr.pvalue]
         correlation_table.append(table_input)
     #  Print all the parameters and their corresponding pvals and correlation statistics
     print(tabulate(correlation_table, headers=["Statistic", "Correlation", "P_val"]))
+
+    test_arr = []
+    test_labels = []
+    for row in split[0]:
+        if len(row) == 98:
+            if row[48] > row[49]:
+                test_labels.append(0)
+            else:
+                test_labels.append(1)
+            test_arr.append(np.array(row))
+    bestEstimate.fit(train_arr, labels)
+    y_pred = clf.predict(test_arr)
+
+    f = f1_score(test_labels, y_pred)
+    print("F1 Score: ", f)
+
+
 
 
 

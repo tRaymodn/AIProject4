@@ -20,7 +20,7 @@ def make_model():
     games = train_test_split(games, test_size=0.2, random_state=40, shuffle=False)
     teams_seen = []  # List of teams that have been reached in the loop
     game_sequences = []  # Nested list of data for each team for every game they've played
-    for game in games[0][:200]:
+    for game in games[0][:400]:
         if game[1] not in teams_seen and len(game[1]) == 3:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
             teams_seen.append(game[1])
             game_sequences.append(getTeamData(game[1], game[0]))
@@ -42,8 +42,8 @@ def make_model():
         print("seq: ", seq)
         i = 0
         sequence_clipped = []  # Array where the short sequences will be stored
-        while i < 8:  # Creating two sequences of four games each from each team's full sequence of games
-            if i == 4:
+        while i < len(seq):  # Creating two sequences of four games each from each team's full sequence of games
+            if i % 4 == 0 and i != 0:
                 arr.append(np.array(sequence_clipped))  # Add short sequence to the final array
                 sequence_clipped = []  # Empty the array containing the short sequence
                 if seq[i][48] > seq[i][49]:  # Add a 0 to the labels if the away team wins and a 1 otherwise
@@ -52,23 +52,29 @@ def make_model():
                     sequence_labels.append([1])
             sequence_clipped.append(np.array(seq[i]))
             i += 1
-        arr.append(np.array(sequence_clipped))
-        if seq[i-1][48] > seq[i-1][49]:
-            sequence_labels.append([0])
-        else:
-            sequence_labels.append([1])
+        if len(sequence_clipped) == 4:
+            arr.append(np.array(sequence_clipped))
+            if seq[i - 1][48] > seq[i - 1][49]:
+                sequence_labels.append([0])
+            else:
+                sequence_labels.append([1])
+
     print("Shape of arr: ", np.shape(arr))
     print("arr[0][0]: ", arr[0][0])
     labs = np.asarray(sequence_labels)
     print(labs)
     print("Shape of labs is: ", np.shape(labs))
-    labs.reshape((64, 1, 1))
+    labs.reshape((len(sequence_labels), 1, 1))
     print("labs reshaped is: ", np.shape(labs))
     arr = tf.stack(arr)
 
     print("label shape: ", np.shape(sequence_labels))
     model = Sequential()
-    model.add(LSTM(20, activation='relu', return_sequences=True))
+    model.add(BatchNormalization())
+    model.add(LSTM(50, activation='relu', return_sequences=True))
+    model.add(Dropout(0.2))
+
+    model.add(LSTM(30, activation='relu', return_sequences=True))
     model.add(Dropout(0.2))
 
     model.add(LSTM(20, activation='relu', return_sequences=False))
@@ -81,12 +87,12 @@ def make_model():
     model.compile(optimizer=opt, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', 'mse'])
 
     print(np.shape(arr))
-    model.fit(arr, labs, epochs=400)  # Fit the training data to the RNN model and run for 400 epochs
+    model.fit(arr, labs, epochs=100)  # Fit the training data to the RNN model and run for 400 epochs
 
     # Put the testing data into game sequences by team
     testing_teams_seen = []
     testing_sequences = []
-    for game in games[1][:70]:
+    for game in games[1][:200]:
         if game[1] not in testing_teams_seen and len(game[1]) == 3:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
             testing_teams_seen.append(game[1])
             testing_sequences.append([getTeamData(game[1], game[0])])
@@ -105,7 +111,7 @@ def make_model():
     for seq in testing_sequences:
         print("length of testing sequence: ", len(seq))
         print("seq: ", seq)
-        testing_arr.append(np.array(seq[0:2]))
+        testing_arr.append(np.array(seq[0:4]))
         if seq[1][48] > seq[1][49]:
             testing_labels.append([0])
         else:
