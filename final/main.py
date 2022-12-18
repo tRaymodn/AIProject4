@@ -23,14 +23,17 @@ with open("fullDataset.csv") as file:
 def getAllGames():
     games = []
     for row in data[1:]:
-        if row[48] > row[49]:
+        if row[47] > row[48]:
             label = 0
         else:
             label = 1
         gameInstance = [row[68], row[29], row[30], label]
         flag = 0
         for game in games:
-            if gameInstance == game or game == [row[68], row[30], row[29], label]:  # Catch repeat games with different home and away teams
+            opp = 0
+            if label == 0:
+                opp = 1
+            if game[0] == gameInstance[0] and (game[1] == gameInstance[1] or game[1] == gameInstance[2]) and (game[2] == gameInstance[1] or game[2] == gameInstance[2]):  # Catch repeat games with different home and away teams
                 flag = 1
         if flag == 0:
             games.append(gameInstance)
@@ -42,6 +45,8 @@ def getTeamData(team, date):
     current_date = datetime.datetime.strptime(date, date_format)  # datetime object for the date input to function
     teamData = []
     for row in data[1:]:
+        vscore = 0
+        hscore = 0
         game_date = datetime.datetime.strptime(row[68], date_format)
         if game_date.month - 4 < 1:
             cutoff_date = datetime.datetime(game_date.year - 1, 12 + (game_date.month - 4), 1)
@@ -50,7 +55,7 @@ def getTeamData(team, date):
         if row[4] == team and current_date > game_date > cutoff_date:
             if len(teamData) < 1:
                 for i in range(len(row)):
-                    if 5 <= i <= 28 or 30 < i <= 54 or 57 <= i <= 58:
+                    if 5 <= i <= 28 or 30 < i <= 54:
                         teamData.append(float(row[i]))
             else:
                 dc = 0
@@ -58,6 +63,9 @@ def getTeamData(team, date):
                     if 5 <= i <= 28 or 30 < i <= 54:
                         teamData[dc] += float(row[i])
                         dc += 1
+        if current_date == game_date and 47 < len(teamData) < 50:
+            teamData.append(float(row[57]))
+            teamData.append(float(row[58]))
     return teamData
 
 # Returns a list of all teams in the NFL
@@ -170,4 +178,5 @@ def main():
 
         
 if __name__ == "__main__":
-      main()
+    print(len(getAllGames()))
+    main()

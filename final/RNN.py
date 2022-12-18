@@ -8,11 +8,9 @@ import numpy as np
 from main import getTeamData, getAllGames
 
 date_format = "%Y-%m-%d"
-
-
-def normalize_data(data):
-    pass
     
+def normalize(data):
+    return(data - np.min(data)) / (np.max(data) - np.min(data))
 
 def make_model():
     # Populate dataset with sequences of teams' game stat sums to be input into neural network
@@ -20,7 +18,7 @@ def make_model():
     games = train_test_split(games, test_size=0.2, random_state=40, shuffle=False)
     teams_seen = []  # List of teams that have been reached in the loop
     game_sequences = []  # Nested list of data for each team for every game they've played
-    for game in games[0][:400]:
+    for game in games[0][:800]:
         if game[1] not in teams_seen and len(game[1]) == 3:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
             teams_seen.append(game[1])
             game_sequences.append(getTeamData(game[1], game[0]))
@@ -50,7 +48,7 @@ def make_model():
                     sequence_labels.append([0])
                 else:
                     sequence_labels.append([1])
-            sequence_clipped.append(np.array(seq[i]))
+            sequence_clipped.append(normalize(np.array(seq[i])))
             i += 1
         if len(sequence_clipped) == 4:
             arr.append(np.array(sequence_clipped))
@@ -87,7 +85,7 @@ def make_model():
     model.compile(optimizer=opt, loss=tf.keras.losses.BinaryCrossentropy(), metrics=['accuracy', 'mse'])
 
     print(np.shape(arr))
-    model.fit(arr, labs, epochs=100)  # Fit the training data to the RNN model and run for 400 epochs
+    model.fit(arr, labs, epochs=150)  # Fit the training data to the RNN model and run for 400 epochs
 
     # Put the testing data into game sequences by team
     testing_teams_seen = []
@@ -96,13 +94,13 @@ def make_model():
         if game[1] not in testing_teams_seen and len(game[1]) == 3:  # If the team hasn't been seen yet, add it in the seen teams and game sequences
             testing_teams_seen.append(game[1])
             testing_sequences.append([getTeamData(game[1], game[0])])
-        elif len(game[1]) == 3:  # Adds game values if team has been seen already
+        elif len(game[1]) == 3 and game[1] in testing_teams_seen:  # Adds game values if team has been seen already
             testing_sequences[testing_teams_seen.index(game[1])].append(getTeamData(game[1], game[0]))
 
         if game[2] not in testing_teams_seen and len(game[2]) == 3:
             testing_teams_seen.append(game[2])
             testing_sequences.append([getTeamData(game[2], game[0])])
-        elif len(game[2]) == 3:
+        elif len(game[2]) == 3 and game[2] in testing_teams_seen:
             testing_sequences[testing_teams_seen.index(game[2])].append(getTeamData(game[2], game[0]))
     print("Shape of testing sequences: ", np.shape(testing_sequences))
 
@@ -111,8 +109,14 @@ def make_model():
     for seq in testing_sequences:
         print("length of testing sequence: ", len(seq))
         print("seq: ", seq)
-        testing_arr.append(np.array(seq[0:4]))
-        if seq[1][48] > seq[1][49]:
+        index = 0
+        small_arr = []
+        for index in range(4, 8):
+            small_arr.append(normalize(np.array(seq[index])))
+        testing_arr.append(np.array(small_arr))
+        # testing_arr.append(np.array(seq[4:8]))
+        print("Visitors score, home score for the real game:", seq[8][48], seq[8][49])
+        if seq[8][48] > seq[8][49]:
             testing_labels.append([0])
         else:
             testing_labels.append([1])
