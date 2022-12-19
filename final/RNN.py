@@ -30,7 +30,6 @@ def make_model():
             game_sequences.append(getTeamData(game[2], game[0]))
         elif len(game[2]) == 3:
             game_sequences[teams_seen.index(game[2])].append(getTeamData(game[2], game[0]))
-    print("Shape of game_sequences: ", np.shape(game_sequences))
 
     arr = []
     sequence_labels = []
