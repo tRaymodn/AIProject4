@@ -72,10 +72,10 @@ def make_model():
     model.add(LSTM(50, activation='relu', return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(30, activation='relu', return_sequences=True))
+    model.add(LSTM(50, activation='relu', return_sequences=True))
     model.add(Dropout(0.2))
 
-    model.add(LSTM(20, activation='relu', return_sequences=False))
+    model.add(LSTM(50, activation='relu', return_sequences=False))
     model.add(Dropout(0.2))
 
     model.add(Dense(1, activation='sigmoid'))
@@ -111,12 +111,12 @@ def make_model():
         print("seq: ", seq)
         index = 0
         small_arr = []
-        for index in range(4, 8):
+        for index in range(2, 6):
             small_arr.append(normalize(np.array(seq[index])))
         testing_arr.append(np.array(small_arr))
         # testing_arr.append(np.array(seq[4:8]))
-        print("Visitors score, home score for the real game:", seq[8][48], seq[8][49])
-        if seq[8][48] > seq[8][49]:
+        print("Visitors score, home score for the real game:", seq[6][48], seq[6][49])
+        if seq[6][48] > seq[6][49]:
             testing_labels.append([0])
         else:
             testing_labels.append([1])

@@ -110,7 +110,7 @@ def main():
 
     print("Length of testing data : ", len(split[1]))
     print("Size of training data: ", len(train_arr))
-    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(6, 3), random_state=1, max_iter=2500)
+    clf = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(6, 3), random_state=1, max_iter=3500)
     clf.fit(train_arr, labels)
 
     #  Hyperparameters to be tuned in GridSearchCV
@@ -164,7 +164,6 @@ def main():
             else:
                 test_labels.append(1)
             test_arr.append(np.array(row))
-    bestEstimate.fit(train_arr, labels)
     y_pred = clf.predict(test_arr)
 
     f = f1_score(test_labels, y_pred)
